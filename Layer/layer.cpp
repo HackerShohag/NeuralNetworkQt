@@ -97,3 +97,33 @@ double Layer::NodeCost(double outputActivation, double expectedOutput)
     double error = outputActivation - expectedOutput;
     return error * error;
 }
+
+int Layer::getNumNodesIn() const
+{
+    return numNodesIn;
+}
+
+int Layer::getNumNodesOut() const
+{
+    return numNodesOut;
+}
+
+QVector<QVector<double> > *Layer::getCostGradientWeights() const
+{
+    return costGradientWeights;
+}
+
+QVector<double> *Layer::getCostGradientBiases() const
+{
+    return costGradientBiases;
+}
+
+QVector<QVector<double> > *Layer::getWeights() const
+{
+    return weights;
+}
+
+QVector<double> *Layer::getBiases() const
+{
+    return biases;
+}

@@ -36,6 +36,7 @@ public:
     double Cost(DataPoint *dataPoint);
     double Cost(QVector<DataPoint> *data);
     void Learn(QVector<DataPoint> *trainingData, double learnRate);
+    void ApplyAllGradients(double learnRate);
 };
 
 #endif // NEURALNETWORK_H

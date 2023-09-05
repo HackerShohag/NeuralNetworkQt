@@ -74,28 +74,41 @@ double NeuralNetwork::Cost(QVector<DataPoint> *data)
     return totalCost / data->length();
 }
 
-//void NeuralNetwork::Learn(QVector<DataPoint> *trainingData, double learnRate)
-//{
-//    double h = 0.0001;
-//    double originalCost = Cost(trainingData);
-//    for (Layer layer : *layers)
-//    {
-//        // Calculate the cost gradient for the current weights
-//        for (int nodeIn = 0; nodeIn < layer.numNodesIn; nodeIn++) {
-//            for (int nodeOut = 0; nodeOut < layer.numNodesOut; nodeOut++) {
-//                layer.weights[nodeIn][nodeOut] += h;
-//                double deltaCost = Cost(trainingData) - originalCost;
-//                layer.weights[nodeIn][nodeOut] -= h;
-//                layer.costGradientWeights[nodeIn][nodeOut] = deltaCost / h;
-//            }
-//        }
-//        // Calculate the cost gradient for the current biases
-//        for (int biasIndex = 0; biasIndex < layer.biases->length() ; biasIndex++) {
-//            layer.biases[biasIndex] += h;
-//            double deltaCost = Cost(trainingData) - originalCost;
-//            layer.biases[biasIndex] -= h;
-//            layer.costGradientBiases [biasIndex] = deltaCost / h;
-//        }
-//    }
-//    ApplyAllGradients(learnRate); // Calls ApplyGradients()
-//}
+void NeuralNetwork::Learn(QVector<DataPoint> *trainingData, double learnRate)
+{
+    double h = 0.0001;
+    double originalCost = Cost(trainingData);
+    for (Layer layer : *layers)
+    {
+        // Calculate the cost gradient for the current weights
+        auto costGradientW = layer.getCostGradientWeights();
+        auto weights= layer.getWeights();
+
+        for (int nodeIn = 0; nodeIn < layer.getNumNodesIn() ; nodeIn++) {
+            for (int nodeOut = 0; nodeOut < layer.getNumNodesOut(); nodeOut++) {
+                (*weights)[nodeIn][nodeOut] += h;
+                double deltaCost = Cost(trainingData) - originalCost;
+                (*weights)[nodeIn][nodeOut] -= h;
+                (*costGradientW)[nodeIn][nodeOut] = deltaCost / h;
+            }
+        }
+        // Calculate the cost gradient for the current biases
+        auto biases = layer.getBiases();
+        auto costGradientB = layer.getCostGradientBiases();
+        for (int biasIndex = 0; biasIndex < biases->length() ; biasIndex++) {
+            (*biases)[biasIndex] += h;
+            double deltaCost = Cost(trainingData) - originalCost;
+            (*biases)[biasIndex] -= h;
+            (*costGradientB)[biasIndex] = deltaCost / h;
+        }
+    }
+    ApplyAllGradients(learnRate); // Calls ApplyGradients()
+}
+
+void NeuralNetwork::ApplyAllGradients(double learnRate)
+{
+    for (Layer layer : *layers)
+    {
+        layer.ApplyGradients(learnRate);
+    }
+}

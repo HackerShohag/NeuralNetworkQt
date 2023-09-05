@@ -21,15 +21,6 @@
 
 class Layer
 {
-private:
-    int numNodesIn, numNodesOut;
-
-    QVector<QVector<double>> *costGradientWeights;
-    QVector<double> *costGradientBiases;
-
-    QVector<QVector<double>> *weights;
-    QVector<double> *biases;
-
 public:
     Layer();
     Layer(int numNodesIn, int numNodesOut);
@@ -39,6 +30,23 @@ public:
     void InitializeRandomWeights();
     double ActivationFunction(double weightedInput);
     double NodeCost(double outputActivation, double expectedOutput);
+
+    // getters
+    int getNumNodesOut() const;
+    int getNumNodesIn() const;
+    QVector<QVector<double> > *getCostGradientWeights() const;
+    QVector<double> *getCostGradientBiases() const;
+    QVector<QVector<double> > *getWeights() const;
+    QVector<double> *getBiases() const;
+
+private:
+    int numNodesIn, numNodesOut;
+
+    QVector<QVector<double>> *costGradientWeights;
+    QVector<double> *costGradientBiases;
+
+    QVector<QVector<double>> *weights;
+    QVector<double> *biases;
 };
 
 #endif // LAYER_H
