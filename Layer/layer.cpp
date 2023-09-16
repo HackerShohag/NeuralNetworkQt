@@ -32,8 +32,10 @@ Layer::Layer(int numNodesIn, int numNodesOut)
     qDebug() << Q_FUNC_INFO;
     this->numNodesIn = numNodesIn;
     this->numNodesOut = numNodesOut;
-    //    weights = new QVector<QVector<double>>(numNodesOut);
-    //    biases = new QVector<double>(numNodesOut);
+
+    weightedInputs = new QVector<double>();
+    activations = new QVector<double>();
+
     InitializeRandomWeights();
 }
 
@@ -50,8 +52,11 @@ QVector<double> *Layer::CalculateOutputs(QVector<double> *inputs)
         double weightedInput = biases->at(nodeOut);
         for (int nodeIn = 0; nodeIn < numNodesIn; nodeIn++) {
             weightedInput += inputs->at(nodeIn) * weights->at(nodeIn).at(nodeOut);
+            weightedInputs->append(weightedInput);
         }
-        activationValues->insert(nodeOut, ActivationFunction(weightedInput));
+        double activationValue = ActivationFunction(weightedInput);
+        activations->append(activationValue);
+        activationValues->insert(nodeOut, activationValue);
     }
     return activationValues;
 }
@@ -88,7 +93,14 @@ void Layer::InitializeRandomWeights()
 double Layer::ActivationFunction(double weightedInput)
 {
     qDebug() << Q_FUNC_INFO;
-    return 1 / (1 + qExp(weightedInput));
+    return 1 / (1 + qExp(-weightedInput));
+}
+
+double Layer::ActivationFunctionDerivative(double weightedInput)
+{
+    qDebug() << Q_FUNC_INFO;
+    double activation = ActivationFunction(weightedInput);
+    return activation * (1 - activation);
 }
 
 double Layer::NodeCost(double outputActivation, double expectedOutput)
@@ -96,6 +108,62 @@ double Layer::NodeCost(double outputActivation, double expectedOutput)
     qDebug() << Q_FUNC_INFO;
     double error = outputActivation - expectedOutput;
     return error * error;
+}
+
+QVector<double> *Layer::CalculateOutputLayerNodeValues(QVector<double> *expectedOutputs)
+{
+    nodeValues =  new QVector<double>(expectedOutputs->length());
+    for (int i = 0; i < nodeValues->length(); i++){
+        // Evaluate partial derivatives for current node: cost/activation & activation/weightedInput
+        double costDerivative = NodeCostDerivative(activations->at(i), expectedOutputs->at(i));
+        double activationDerivative = ActivationFunctionDerivative(weightedInputs->at(i));
+        (*nodeValues)[i]  = activationDerivative * costDerivative;
+    }
+    return nodeValues;
+}
+
+void Layer::UpdateGradients(QVector<double> *nodeValues)
+{
+    for (int nodeOut = 0; nodeOut < numNodesOut; nodeOut++)
+    {
+        for (int nodeIn = 0; nodeIn < numNodesIn; nodeIn++)
+        {
+            // Evaluate the partial derivative: cost / weight of current connection
+            double derivativeCostWrtweight = weightedInputs->at(nodeIn) * nodeValues->at(nodeOut);
+            // The costGradientW array stores these partial derivatives for each weight.
+            //Note: the derivative is being added to the array here because ultimately we want
+            //to calculate the average gradient across all the data in the training batch
+            (*costGradientWeights)[nodeIn][nodeOut ] += derivativeCostWrtweight;
+        }
+        // Evaluate the partial derivative: cost / bias of the current node
+         double derivativeCostWrtBias = 1 * nodeValues->at(nodeOut);
+        costGradientBiases[nodeOut] += derivativeCostWrtBias;
+    }
+}
+
+QVector<double> *Layer::CalculateHiddenLayerNodeValues(Layer *oldLayer, QVector<double> *oldNodeValues)
+{
+    QVector<double> *newNodeValues = new QVector<double>(numNodesOut);
+    QVector<QVector<double>> *oldLayerWeights = oldLayer->getWeights();
+    for (int newNodeIndex = 0; newNodeIndex < newNodeValues->length(); newNodeIndex++)
+    {
+        double newNodeValue = 0;
+        for (int oldNodeIndex = 0; oldNodeIndex < oldNodeValues->length(); oldNodeIndex++)
+        {
+            // Partial derivative of the weighted input with respect to the input
+            double weightedInputDerivative = (*oldLayerWeights)[newNodeIndex][oldNodeIndex];
+            newNodeValue += weightedInputDerivative * oldNodeValues->at(oldNodeIndex);
+        }
+        newNodeValue *= ActivationFunctionDerivative(weightedInputs->at(newNodeIndex));
+        (*newNodeValues)[newNodeIndex] = newNodeValue;
+    }
+    return newNodeValues;
+}
+
+double Layer::NodeCostDerivative(double outputActivation, double expectedOutput)
+{
+    qDebug() << Q_FUNC_INFO;
+    return 2 * (outputActivation - expectedOutput);
 }
 
 int Layer::getNumNodesIn() const

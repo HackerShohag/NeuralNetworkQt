@@ -21,14 +21,17 @@
 
 class NeuralNetwork
 {
-    struct DataPoint{
-        QVector<double> *inputs;
-        QVector<qint16> *expectedOutputs;
-    };
-
     QVector<Layer> *layers;
 
 public:
+    struct DataPoint{
+        template<typename T> QVector<T> setInputs() {
+
+        }
+//        *inputs;
+        QVector<double> *expectedOutputs;
+    };
+
     NeuralNetwork(QVector<qint16> layerSizes);
     ~NeuralNetwork();
     QVector<double> *CalculateOutputs(QVector<double> *inputs);
@@ -37,6 +40,7 @@ public:
     double Cost(QVector<DataPoint> *data);
     void Learn(QVector<DataPoint> *trainingData, double learnRate);
     void ApplyAllGradients(double learnRate);
+    void UpdateAllGradients(DataPoint dataPoint);
 };
 
 #endif // NEURALNETWORK_H

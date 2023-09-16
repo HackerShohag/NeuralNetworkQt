@@ -29,7 +29,11 @@ public:
     void ApplyGradients(double learnRate);
     void InitializeRandomWeights();
     double ActivationFunction(double weightedInput);
+    double ActivationFunctionDerivative(double weightedInput);
     double NodeCost(double outputActivation, double expectedOutput);
+    QVector<double> *CalculateOutputLayerNodeValues(QVector<double> *expectedOutputs);
+    void UpdateGradients(QVector<double> *nodeValues);
+    QVector<double> *CalculateHiddenLayerNodeValues(Layer *oldLayer, QVector<double> *oldNodeValues);
 
     // getters
     int getNumNodesOut() const;
@@ -47,6 +51,12 @@ private:
 
     QVector<QVector<double>> *weights;
     QVector<double> *biases;
+
+    QVector<double> *activations;
+    QVector<double> *weightedInputs;
+    QVector<double> *nodeValues;
+
+    double NodeCostDerivative(double outputActivation, double expectedOutput);
 };
 
 #endif // LAYER_H

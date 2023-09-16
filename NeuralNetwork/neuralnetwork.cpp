@@ -76,33 +76,13 @@ double NeuralNetwork::Cost(QVector<DataPoint> *data)
 
 void NeuralNetwork::Learn(QVector<DataPoint> *trainingData, double learnRate)
 {
-    double h = 0.0001;
-    double originalCost = Cost(trainingData);
-    for (Layer layer : *layers)
+    for (auto dataPoint: *trainingData)
     {
-        // Calculate the cost gradient for the current weights
-        auto costGradientW = layer.getCostGradientWeights();
-        auto weights= layer.getWeights();
-
-        for (int nodeIn = 0; nodeIn < layer.getNumNodesIn() ; nodeIn++) {
-            for (int nodeOut = 0; nodeOut < layer.getNumNodesOut(); nodeOut++) {
-                (*weights)[nodeIn][nodeOut] += h;
-                double deltaCost = Cost(trainingData) - originalCost;
-                (*weights)[nodeIn][nodeOut] -= h;
-                (*costGradientW)[nodeIn][nodeOut] = deltaCost / h;
-            }
-        }
-        // Calculate the cost gradient for the current biases
-        auto biases = layer.getBiases();
-        auto costGradientB = layer.getCostGradientBiases();
-        for (int biasIndex = 0; biasIndex < biases->length() ; biasIndex++) {
-            (*biases)[biasIndex] += h;
-            double deltaCost = Cost(trainingData) - originalCost;
-            (*biases)[biasIndex] -= h;
-            (*costGradientB)[biasIndex] = deltaCost / h;
-        }
+        UpdateAllGradients(dataPoint);
     }
-    ApplyAllGradients(learnRate); // Calls ApplyGradients()
+
+    ApplyAllGradients(learnRate / trainingData->length()); // Calls ApplyGradients()
+//    ClearAllGradients();
 }
 
 void NeuralNetwork::ApplyAllGradients(double learnRate)
@@ -110,5 +90,24 @@ void NeuralNetwork::ApplyAllGradients(double learnRate)
     for (Layer layer : *layers)
     {
         layer.ApplyGradients(learnRate);
+    }
+}
+
+void NeuralNetwork::UpdateAllGradients(DataPoint dataPoint)
+{
+    // Run the inputs through the network. During this process, each layer will
+    // store the values we need, such as the weighted inputs and activations.
+    CalculateOutputs(dataPoint. inputs);
+    Layer outputLayer = (*layers)[layers->length() - 1];
+    QVector<double> *nodeValues = outputLayer.CalculateOutputLayerNodeValues(dataPoint.expectedOutputs);
+    outputLayer.UpdateGradients(nodeValues);
+
+    // Update gradients of the hidden layer
+
+    for (int hiddenLayerIndex = layers->length() - 2; hiddenLayerIndex >= 0; hiddenLayerIndex--)
+    {
+        Layer hiddenLayer = layers->at(hiddenLayerIndex);
+        nodeValues = hiddenLayer.CalculateHiddenLayerNodeValues(&(*layers)[hiddenLayerIndex + 1], nodeValues);
+        hiddenLayer.UpdateGradients(nodeValues);
     }
 }
